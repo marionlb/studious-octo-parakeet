@@ -8,9 +8,9 @@ setuptools = "*"
 pandas = "*"
 numpy = "*"
 "e1839a8" = {path = ".", editable = true}
-pytest = "*"
 
 [dev-packages]
+pytest = "*"
 
 [requires]
 python_version = "3.6"
