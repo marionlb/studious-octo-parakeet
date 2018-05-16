@@ -4,4 +4,4 @@ ARG SRC=/src
 COPY . $SRC/
 WORKDIR $SRC
 
-RUN pipenv install --dev
+RUN pip install pipenv && pipenv install --dev
