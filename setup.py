@@ -1,7 +1,7 @@
 from setuptools import setup
-import studious_octo_parakeet
+import src
 
 setup(
     name='studious-octo-parakeet',
-    version=studious_octo_parakeet.__version__
+    version=src.__version__
 )

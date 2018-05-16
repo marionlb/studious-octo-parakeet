@@ -1,0 +1,86 @@
+variables:
+  IMAGE_CI: $CI_REGISTRY/$CI_PROJECT_PATH:$CI_COMMIT_SHA
+  IMAGE_MAIN: $CI_REGISTRY/$CI_PROJECT_PATH:latest
+  DOCKER_DRIVER: overlay2
+
+stages:
+  - build
+  - test
+  - release
+
+
+style_check:
+  stage: build
+  allow_failure: true
+  image: python:3.6.5-slim
+  before_script:
+    - pip install pipenv
+  script:
+    - make quality
+
+
+unittests:
+  stage: build
+  image: python:3.6.5-slim
+  before_script:
+    - pip install pipenv
+  script:
+    - make test
+
+
+build:
+  stage: build
+  image: docker:stable
+  services:
+    - docker:dind
+  before_script:
+    - docker info
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+
+  script:
+    - docker pull $IMAGE_MAIN || true
+    - docker build --cache-from $IMAGE_MAIN --tag $IMAGE_CI  .
+    - docker push $IMAGE_CI
+    - echo $IMAGE_CI
+
+
+post_build_tests:
+  stage: test
+  image: $IMAGE_CI
+  before_script:
+    - pip install pipenv
+  script:
+    - echo "this is running inside the d3m_deploy image"
+    - make tests
+
+
+release:
+  stage: release
+  image: docker:stable
+  services:
+    - docker:dind
+  before_script:
+    - docker info
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+  script:
+    - docker pull $IMAGE_CI
+    - docker tag $IMAGE_CI $IMAGE_MAIN
+    - docker push $IMAGE_MAIN
+  only:
+    - tags
+
+
+pages:
+  image: $IMAGE_CI
+  stage: release
+  script:
+  - pip install sphinx sphinx-rtd-theme
+  - make coverage
+  - make doc
+  - mv build/ ../public/
+  artifacts:
+    paths:
+    - public
+  only:
+    - master
+
